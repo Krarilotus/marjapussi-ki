@@ -21,9 +21,6 @@ class VerySmartPolicy(Policy):
             has_ace(PlayerNum, prob)
             has_no_ace(PlayerNum, prob)
         """
-        self.knowledge_base([
-            # initialise knowledge base (like production rules)
-        ])
 
     def _action_string(self, state, action, value):
         return f'{state["player_num"]},{action},{value}'
@@ -38,43 +35,37 @@ class VerySmartPolicy(Policy):
         return steps_player_num
 
     def _update_provoking_beliefs(self, state, legal_actions):
-        # does partner have an ace?
+
+        partner_num = (state['player_num'] + 2) % 4
+        my_num = state['player_num']
 
         steps = self._convert_prov_history_to_steps(state['provoking_history'])
 
         # only update things we do not know yet
-        if self.knowledge_base.query(f"has_ace({(state['player_num'] + 2) % 4})"):
+        # if self.knowledge_base.query(f"has_ace({(state['player_num'] + 2) % 4})"):
 
         # only update if we don't know yet
         # and if we have seen the partner's first step
         # and if any of our steps is not 5
-        if 'partner_has_ace' not in self.beliefs \
-                and steps[(state['player_num'] + 2) % 4] \
-                and not self.knowledge.get('prov_ace'):
-            if steps[(state['player_num'] + 2) % 4][0] == 5:
-                print("PARTNER HAS AN ACE")
-                self.knowledge_base([f"has_ace({state['player_num'] + 2})"])
-                self.beliefs['partner_has_ace'] = 1
+        if self.knowledge_base.q('has_ace', partner_num, 'X') \
+                and steps[partner_num] \
+                and not self.knowledge_base.q('prov_ace', 'X'):
+            if steps[partner_num][0] == 5:
+                self.knowledge_base.add("has_ace", partner_num, 1)
             else:
-                self.knowledge_base([f"has_no_ace({state['player_num'] + 2})"])
-                self.beliefs['partner_has_ace'] = 0
+                self.knowledge_base.add("has_no_ace", partner_num, 1)
 
         if 'partner_has_a_small_pair' not in self.beliefs:
-            if 10 in steps[(state['player_num'] + 2) % 4]:
+            if 10 in steps[partner_num]:
                 if state['game_value'] < 140:
-                    print("PARTNER HAS MAYBE A SMALL PAIR OR THREE HALVES")
-                    self.knowledge_base([f"has_small_pair({state['player_num'] + 2}, 0.5)"])
-                    self.knowledge_base([f"has_three_halves({state['player_num'] + 2}, 0.5)"])
-                    self.beliefs['partner_has_a_small_pair'] = 0.5
-                    self.beliefs['partner_has_three_halves'] = 0.5
+                    self.knowledge_base.add("has_small_pair", partner_num, 0.5)
+                    self.knowledge_base.add("has_three_halves", partner_num, 0.5)
                 else:
-                    print("PARTNER HAS VERY PROBABLY SMALL PAIR")
-                    self.beliefs['partner_has_a_small_pair'] = 1
+                    self.knowledge_base.add("has_small_pair", partner_num, 0.9)
 
         if 'partner_has_a_big_pair' not in self.beliefs:
-            if 15 in steps[(state['player_num'] + 2) % 4]:
-                print("PARTNER HAS A SMALL PAIR")
-                self.beliefs['partner_has_a_big_pair'] = 1
+            if 15 in steps[partner_num]:
+                self.knowledge_base.add("has_big_pair", partner_num, 1)
 
     def select_action(self, state, legal_actions) -> str:
         # pprint(state)
@@ -82,27 +73,28 @@ class VerySmartPolicy(Policy):
 
         game_phase = legal_actions[0].split(',')[1]
 
-        pprint(self.beliefs)
-
         if game_phase == 'PROV':
             self._update_provoking_beliefs(state, legal_actions)
             # if you have an ace (no matter what else you have)
             #  you can provoke +5
             # do not provoke 5 if your partner has an ace
 
-            if not self.knowledge.get("prov_ace") and not self.beliefs.get('partner_has_ace', False):
+            if not self.knowledge_base.q("has_ace", state['player_num'], "X") \
+                    and not self.knowledge_base.q('has_ace', (state['player_num'] + 2) % 4, "False"):
                 # do we have an ace?
                 x = [card[-1] == "A" for card in state['cards']]
                 if any(x):
-                    self.knowledge["prov_ace"] = True
+                    self.knowledge_base.add('has_ace', 1)
                     return self._action_string(state, 'PROV', state['game_value']+5)
             else:
                 # do we have pairs?
                 for color in putils.COLORS:
                     # go through all colors
                     if putils.contains_pair(state['cards'], color):
-                        if not self.knowledge.get(f"prov_pair_{color}"):
-                            self.knowledge['prov_pair_' + color] = True
+                        # if we have a pair of this color
+                        if not self.knowledge_base.q("prov_pair", state['player_num'], color):
+                            # if we have not provoked this pair yet
+                            self.knowledge_base.add("prov_pair", state['player_num'], color)
                             if color in "rs":
                                 return self._action_string(state, 'PROV', state['game_value'] + 15)
                             else:
@@ -110,6 +102,7 @@ class VerySmartPolicy(Policy):
                 # do we have three halves?
                 halves = [card for card in state['cards'] if card[-1] in "KO"]
                 if len(halves) >= 3:
+                    self.knowledge_base.add("has_three_halves", state['player_num'], "True")
                     return self._action_string(state, 'PROV', state['game_value'] + 10)
 
             return self._action_string(state, 'PROV', 0)
