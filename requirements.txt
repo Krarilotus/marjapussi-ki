@@ -1,3 +1,3 @@
-pytholog~=2.4.1
 marjapussi~=1.0.3
 swiplserver~=1.0.2
+tqdm~=4.64.1
