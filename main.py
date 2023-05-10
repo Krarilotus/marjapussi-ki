@@ -12,7 +12,6 @@ from policy import VerySmartPolicy
 from policy2 import AlwaysProvokePolicy
 # random.seed(2)
 
-
 def main():
     custom_rules = {
         "start_game_value": 115,
@@ -21,7 +20,6 @@ def main():
     with stop_watch('Testen'):
         test_agents(VerySmartPolicy(), VerySmartPolicy(), rounds=1, custom_rules=custom_rules, log_agent=False, log_game='DEBUG')
 
-
 @contextmanager
 def stop_watch(name):
     start_time = time.time()
@@ -29,7 +27,6 @@ def stop_watch(name):
     elapsed_time = time.time() - start_time
     print('\u231B [{}] finished in {} ms'.format(
         name, int(elapsed_time * 1_000)))
-
 
 if __name__ == '__main__':
     main()

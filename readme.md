@@ -14,5 +14,3 @@ with some handy modifications.
 ```shell
 python -m pip install git+https://github.com/HerrMotz/marjapussi.git@develop-ai
 ```
-
-

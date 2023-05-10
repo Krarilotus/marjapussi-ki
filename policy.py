@@ -25,7 +25,7 @@ def _action_string(state, action, value):
 
 
 def _card_deconstructor(card):
-    color, value = card.str.lower().split('-')
+    color, value = card.lower().split('-')
     return color, value
 
 
@@ -129,21 +129,22 @@ class VerySmartPolicy(Policy):
                 if 15 in steps[partner_num]:
                     self.q(self.assertz(self.prov_big_pair(partner_num)))
 
-    def _update_possible_card_beliefs(self, state, prev_state, legal_actions):
-        # remove cards that were in the possible cards
-        # but are not in the hand anymore
-
-        prev_possible_cards = prev_state['possible_cards']
-        possible_cards = state['possible_cards']
-
-        # possible cards is a dict which has the player name as key
-        # and a set of the possible cards as value
-        
-        for i, hand in enumerate(possible_cards):
-            now_impossible_cards = prev_possible_cards[i].difference(hand)
-            for card in now_impossible_cards:
-                color, value = _card_deconstructor(card)
-                self.q(self.retract(self.has_card(i, color, value)))
+    # def _update_possible_card_beliefs(self, state, prev_state, legal_actions):
+    #     # remove cards that were in the possible cards
+    #     # but are not in the hand anymore
+    #
+    #     prev_possible_cards = prev_state['possible_cards']
+    #     possible_cards = state['possible_cards']
+    #
+    #     # possible cards is a dict which has the player name as key
+    #     # and a set of the possible cards as value
+    #
+    #     # TODO fertig stellen
+    #     for i, hand in enumerate(possible_cards):
+    #         now_impossible_cards = prev_possible_cards[i].difference(hand)
+    #         for card in now_impossible_cards:
+    #             color, value = _card_deconstructor(card)
+    #             self.q(self.retract(self.has_card(i, color, value)))
 
     def observe_action(self, state, action) -> None:
         action = Action(*action.split(','))
@@ -158,16 +159,16 @@ class VerySmartPolicy(Policy):
             if _is_card(action.value):
                 current_card_color, current_card_value = _card_deconstructor(action.value)
             if state['current_trick'] and _is_card(state['current_trick'][0]):
-                first_card_color, first_card_value = state['current_trick'][0].split('-')
+                first_card_color, first_card_value = _card_deconstructor(state['current_trick'][0].split('-'))
                 
-            # in the first trick a player has to play an ace or green
-            if len(state['all_tricks']) == 0:
-                if action.value.split('-')[1] != 'A':
-                    for i in putils.COLORS:
-                        self.q(self.assertz(self.has_not_card(player_num, i, 'A')))
-                if action.value.split('-')[0] != 'g':
-                    for i in putils.VALUES:
-                        self.q(self.assertz(self.has_not_card(player_num, 'g', i)))
+            # # check whether a player in the first trick has to play green or an ace
+            # if len(state['all_tricks']) == 0:
+            #     if action.value.split('-')[1] != 'A':
+            #         for i in putils.COLORS:
+            #             self.q(self.assertz(self.has_not_card(player_num, i, 'A')))
+            #     if action.value.split('-')[0] != 'g':
+            #         for i in putils.VALUES:
+            #             self.q(self.assertz(self.has_not_card(player_num, 'g', i)))
 
             # if a player can not serve a color, he does not have any card of that color
             if first_card_color != current_card_color:
@@ -184,7 +185,7 @@ class VerySmartPolicy(Policy):
             self._update_provoking_beliefs(state, _prev_state, legal_actions)
             self._print_knowledge_base()
             # if you have an ace (no matter what else you have)
-            #  you can provoke +5
+            #   you can provoke +5
             # do not provoke 5 if your partner has an ace
 
             if not self.q(self.prov_ace(state['player_num'])) \
@@ -219,6 +220,7 @@ class VerySmartPolicy(Policy):
             return _action_string(state, 'PROV', 0)
 
         elif game_phase == 'TRCK':
-            self._update_possible_card_beliefs(state, _prev_state)
+            # self._update_possible_card_beliefs(state, _prev_state, legal_actions)
+            print()
 
         return rnd.choice(legal_actions[:int(math.ceil(len(legal_actions) / 2))])
