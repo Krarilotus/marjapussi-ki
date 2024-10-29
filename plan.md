@@ -6,6 +6,10 @@
 + [ ] standing cards: add whole function
 + [ ] winrate observation and testing
 + [ ] redo backend to reduce pain with string operations (class and property based obejcts!)
++ [ ] Klare Typisierung im Backend einpflegen
++ [ ] Benennungsconventions (trump, base card, methods, abkürzungen vermeiden)
++ [ ] State überarbeiten als Klasse
++ [ ] Agent Klasse einordnen, evtl nach Bedeutung trennen
 
 ## Changes to the very smart policy
 + rules for picking cards in every turn, implementing basic 'good fallback' traits, if no other specific move is deemed 'very good'
