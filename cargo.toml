@@ -1,0 +1,14 @@
+[package]
+name = "pimc_gpu"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = "1.0"           # optional if you want serialization
+serde_derive = "1.0"
+rand = "0.8"           # for CPU-side randomness
+cust = "0.7.1"         # one possible crate for CUDA in Rust
+rayon = "1.7"          # if you also want CPU parallelism
+
+[build-dependencies]
+cust = "0.7.1"
